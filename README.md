@@ -155,7 +155,7 @@ default ✓ [======================================] 1 VUs  10s
 
 ---
 
-#### 데이터를 갱신하는 페이지: 회원정보 수정
+#### 데이터를 갱신하는 페이지: 회원가입
 ```javascript
 import http from 'k6/http';
 import { check, group, sleep, fail } from 'k6';
@@ -169,10 +169,16 @@ export let options = {
 };
 
 const BASE_URL = 'https://subway.javajigi.p-e.kr';
-const USERNAME = 'a@a';
+const FORM = {"email":"b@b","age":"33","password":"1234"};
+const USERNAME = 'b@b';
 const PASSWORD = '1234';
 
 export default () => {
+
+   let joinRes = http.post(`${BASE_URL}/members`, JSON.stringify(FORM), {headers: {'Content-Type': 'application/json'}});
+   check(joinRes, {
+      'joined successfully': (resp)=> resp.status === 201,
+   });
 
    let loginRes = http.post(`${BASE_URL}/login/token`, {
       email: USERNAME,
@@ -181,20 +187,15 @@ export default () => {
    check(loginRes, {
       'logged in successfully': (resp) => resp.json('accessToken') !== '',
    });
-   
+
+
    let authHeaders = {
       headers: {
          Authorization: `Bearer ${loginRes.json('accessToken')}`,
       },
    };
-   let myObjects = http.put(`${BASE_URL}/members/${loginRes['id']}`,
-     {
-        email: USERNAME,
-        password: PASSWORD,
-        age: 999
-     },
-     authHeaders).json();
-   check(myObjects, { 'modify member': (obj) => obj.id != 0 });
+   let myObjects = http.get(`${BASE_URL}/members/me`, authHeaders).json();
+   check(myObjects, { 'retrieved member': (obj) => obj.id != 0 });
    sleep(1);
 };
 ```
@@ -215,29 +216,30 @@ output: -
 * default: 1 looping VUs for 10s (gracefulStop: 30s)
 
 
-running (10.1s), 0/1 VUs, 10 complete and 0 interrupted iterations
+running (10.2s), 0/1 VUs, 10 complete and 0 interrupted iterations
 default ✓ [======================================] 1 VUs  10s
 
+     ✓ joined successfully
      ✓ logged in successfully
-     ✓ modify member
+     ✓ retrieved member
 
-checks.....................: 100.00% ✓ 20  ✗ 0
-data_received..............: 12 kB   1.2 kB/s
-data_sent..................: 5.3 kB  524 B/s
-http_req_blocked...........: avg=1.45ms  min=4.6µs   med=6.37µs  max=28.99ms p(90)=8.71µs  p(95)=1.45ms
-http_req_connecting........: avg=25.19µs min=0s      med=0s      max=503.9µs p(90)=0s      p(95)=25.19µs
-   ✓ http_req_duration..........: avg=3.66ms  min=2.02ms  med=2.65ms  max=16.66ms p(90)=4.01ms  p(95)=10.16ms
-http_req_failed............: 100.00% ✓ 20  ✗ 0
-http_req_receiving.........: avg=67.63µs min=43.64µs med=66.83µs max=98.58µs p(90)=85.33µs p(95)=91.61µs
-http_req_sending...........: avg=29.68µs min=17.51µs med=28.92µs max=83.4µs  p(90)=39.45µs p(95)=46.09µs
-http_req_tls_handshaking...: avg=1.39ms  min=0s      med=0s      max=27.88ms p(90)=0s      p(95)=1.39ms
-http_req_waiting...........: avg=3.56ms  min=1.83ms  med=2.56ms  max=16.56ms p(90)=3.94ms  p(95)=10.08ms
-http_reqs..................: 20      1.977557/s
-iteration_duration.........: avg=1.01s   min=1s      med=1s      max=1.04s   p(90)=1.01s   p(95)=1.03s
-iterations.................: 10      0.988779/s
-vus........................: 1       min=1 max=1
-vus_max....................: 1       min=1 max=1
-
+checks.........................: 100.00% ✓ 30  ✗ 0
+data_received..................: 14 kB   1.4 kB/s
+data_sent......................: 6.4 kB  629 B/s
+http_req_blocked...............: avg=1.33ms   min=4.32µs  med=5.28µs  max=39.92ms  p(90)=8.05µs  p(95)=9.88µs
+http_req_connecting............: avg=15.78µs  min=0s      med=0s      max=473.46µs p(90)=0s      p(95)=0s
+   ✓ http_req_duration..............: avg=5.12ms   min=1.82ms  med=3.46ms  max=15.86ms  p(90)=9.33ms  p(95)=10.84ms
+{ expected_response:true }...: avg=9.74ms   min=7.99ms  med=8.74ms  max=15.86ms  p(90)=11.96ms p(95)=13.91ms
+http_req_failed................: 66.66%  ✓ 20  ✗ 10
+http_req_receiving.............: avg=68.1µs   min=41.09µs med=57.45µs max=332.7µs  p(90)=71.96µs p(95)=79.22µs
+http_req_sending...............: avg=26.78µs  min=12.98µs med=25.08µs max=74.67µs  p(90)=35.31µs p(95)=51.46µs
+http_req_tls_handshaking.......: avg=944.56µs min=0s      med=0s      max=28.33ms  p(90)=0s      p(95)=0s
+http_req_waiting...............: avg=5.02ms   min=1.73ms  med=3.38ms  max=15.76ms  p(90)=8.99ms  p(95)=10.71ms
+http_reqs......................: 30      2.938981/s
+iteration_duration.............: avg=1.02s    min=1.01s   med=1.01s   max=1.05s    p(90)=1.02s   p(95)=1.04s
+iterations.....................: 10      0.97966/s
+vus............................: 1       min=1 max=1
+vus_max........................: 1       min=1 max=1
 ```
 
 ---
